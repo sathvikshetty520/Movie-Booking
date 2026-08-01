@@ -1,4 +1,5 @@
 require('dotenv').config();
+console.log('GROQ_API_KEY loaded:', process.env.GROQ_API_KEY ? 'YES' : 'NO');
 const fs = require('fs');
 const express = require('express');
 const http = require('http');
