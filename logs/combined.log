@@ -1,0 +1,22 @@
+[2026-07-31T15:49:56.679Z] INFO: Movie ticket booking backend running on port 3001
+[2026-07-31T15:49:56.690Z] INFO: Connected to Redis
+[2026-07-31T15:52:38.512Z] INFO: GET /health
+[2026-07-31T16:16:02.525Z] INFO: GET /api/movies
+[2026-07-31T16:16:02.529Z] INFO: Cache MISS: movies:with_shows
+[2026-07-31T16:16:02.647Z] INFO: Fetched 3 movies (with shows)
+[2026-07-31T16:43:40.625Z] INFO: GET /api/shows/1/seats
+[2026-07-31T16:43:40.629Z] INFO: Cache MISS: seats:show:1
+[2026-07-31T16:44:18.092Z] INFO: GET /
+[2026-07-31T16:44:18.170Z] INFO: GET /favicon.ico
+[2026-07-31T17:00:31.798Z] INFO: GET /health
+[2026-07-31T17:01:07.338Z] INFO: GET /movies
+[2026-07-31T17:01:29.233Z] INFO: GET /health
+[2026-07-31T17:02:16.393Z] INFO: GET /api/movies
+[2026-07-31T17:02:16.397Z] INFO: Cache MISS: movies:with_shows
+[2026-07-31T17:02:16.505Z] INFO: Fetched 3 movies (with shows)
+[2026-07-31T17:06:01.212Z] INFO: GET /api/shows/1/seats
+[2026-07-31T17:06:01.215Z] INFO: Cache MISS: seats:show:1
+[2026-07-31T17:07:18.961Z] INFO: POST /api/shows/1/lock-seats
+[2026-07-31T17:07:18.963Z] ERROR: POST /api/shows/1/lock-seats -> 400: user_id is required
+[2026-07-31T17:13:45.144Z] INFO: Movie ticket booking backend running on port 3001
+[2026-07-31T17:13:45.160Z] INFO: Connected to Redis

@@ -1,0 +1,1 @@
+[2026-07-31T17:07:18.963Z] ERROR: POST /api/shows/1/lock-seats -> 400: user_id is required

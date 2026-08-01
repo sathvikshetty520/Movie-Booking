@@ -1,0 +1,25 @@
+{
+  "name": "movie-ticket-booking-backend",
+  "version": "1.0.0",
+  "description": "Movie Ticket Booking Backend with concurrency control (MVC + PostgreSQL + Redis + Socket.io)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "migrate": "psql -U $PGUSER -d $PGDATABASE -f sql/schema.sql",
+    "seed": "psql -U $PGUSER -d $PGDATABASE -f sql/seed.sql"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5",
+    "ioredis": "^5.4.1",
+    "socket.io": "^4.7.5",
+    "dotenv": "^16.4.5",
+    "winston": "^3.13.0",
+    "uuid": "^9.0.1",
+    "express-validator": "^7.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
