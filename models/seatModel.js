@@ -2,13 +2,14 @@ const pool = require('../config/db');
 
 const SeatModel = {
   async getSeatsByShow(showId) {
-    const { rows } = await pool.query(
-      `SELECT seat_id, show_id, seat_number, status
-       FROM seats WHERE show_id = $1 ORDER BY seat_number`,
-      [showId]
-    );
-    return rows;
-  },
+  const { rows } = await pool.query(
+    `SELECT seat_id, show_id, seat_number, status
+     FROM seats WHERE show_id = $1
+     ORDER BY LEFT(seat_number, 1), (regexp_replace(seat_number, '\\D', '', 'g'))::int`,
+    [showId]
+  );
+  return rows;
+},
 
   async getSeatsByIds(seatIds) {
     const { rows } = await pool.query(

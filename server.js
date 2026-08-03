@@ -2,6 +2,7 @@ require('dotenv').config();
 console.log('GROQ_API_KEY loaded:', process.env.GROQ_API_KEY ? 'YES' : 'NO');
 const fs = require('fs');
 const express = require('express');
+const cors = require('cors'); 
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -13,6 +14,7 @@ const logger = require('./utils/logger');
 if (!fs.existsSync('logs')) fs.mkdirSync('logs');
 
 const app = express();
+app.use(cors());      
 app.use(express.json());
 
 // Simple request logger
