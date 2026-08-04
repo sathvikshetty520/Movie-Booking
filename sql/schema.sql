@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS movies (
     language      VARCHAR(50),
     duration_mins INT,
     rating        NUMERIC(2,1) DEFAULT 0,
+    poster_url    TEXT,
+    is_now_showing BOOLEAN DEFAULT TRUE,
     created_at    TIMESTAMP DEFAULT NOW()
 );
 

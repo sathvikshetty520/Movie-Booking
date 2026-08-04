@@ -55,6 +55,21 @@ const BookingModel = {
     );
     return rows;
   },
+  async getBookingsByUser(userId) {
+    const { rows } = await pool.query(
+      `SELECT b.booking_id, b.show_id, b.seat_ids, b.total_amount, b.status, b.created_at,
+              m.title AS movie_title, m.poster_url, s.show_time, s.screen_name,
+              t.name AS theatre_name, t.city
+       FROM bookings b
+       JOIN shows s ON s.show_id = b.show_id
+       JOIN movies m ON m.movie_id = s.movie_id
+       JOIN theatres t ON t.theatre_id = s.theatre_id
+       WHERE b.user_id = $1
+       ORDER BY b.created_at DESC`,
+      [userId]
+    );
+    return rows;
+  },
 };
 
 module.exports = BookingModel;

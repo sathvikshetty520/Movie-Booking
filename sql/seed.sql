@@ -1,18 +1,45 @@
-INSERT INTO movies (title, genre, language, duration_mins, rating) VALUES
-('Interstellar Odyssey', 'Sci-Fi', 'English', 148, 4.7),
-('The Last Heist', 'Action', 'English', 132, 4.3),
-('Chai and Chords', 'Drama', 'Hindi', 120, 4.5)
+-- Movies: real, well-known titles across genres so TMDB poster lookup works accurately.
+-- Run scripts/fetch-posters.js after seeding to populate real poster images + ratings.
+INSERT INTO movies (title, genre, language, duration_mins, rating, is_now_showing) VALUES
+('Inception', 'Sci-Fi', 'English', 148, 8.4, TRUE),
+('The Dark Knight', 'Action', 'English', 152, 9.0, TRUE),
+('Interstellar', 'Sci-Fi', 'English', 169, 8.7, TRUE),
+('Parasite', 'Thriller', 'Korean', 132, 8.5, TRUE),
+('La La Land', 'Musical', 'English', 128, 8.0, TRUE),
+('Oppenheimer', 'Drama', 'English', 180, 8.3, TRUE),
+('Dune', 'Sci-Fi', 'English', 155, 8.0, TRUE),
+('Spider-Man: Into the Spider-Verse', 'Animation', 'English', 117, 8.4, TRUE),
+('Whiplash', 'Drama', 'English', 106, 8.5, TRUE),
+('Knives Out', 'Mystery', 'English', 130, 7.9, TRUE)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO theatres (name, city) VALUES
 ('PVR Forum Mall', 'Bengaluru'),
-('INOX Garuda', 'Bengaluru')
+('INOX Garuda', 'Bengaluru'),
+('Cinepolis Royal Meenakshi', 'Bengaluru')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO shows (movie_id, theatre_id, screen_name, show_time, price, total_seats) VALUES
-(1, 1, 'Screen 1', NOW() + interval '1 day', 250.00, 10),
-(2, 2, 'Screen 3', NOW() + interval '2 day', 220.00, 10),
-(3, 1, 'Screen 2', NOW() + interval '1 day 3 hour', 180.00, 10)
+-- Multiple shows per movie, spread across theatres/screens/times
+INSERT INTO shows (movie_id, theatre_id, screen_name, show_time, price, total_seats)
+SELECT m.movie_id, t.theatre_id, s.screen, NOW() + s.offset_interval, s.price, 10
+FROM (
+  VALUES
+    ('Inception', 1, 'Screen 1', interval '1 day', 250.00),
+    ('Inception', 2, 'Screen 2', interval '1 day 3 hour', 220.00),
+    ('The Dark Knight', 1, 'Screen 2', interval '1 day', 260.00),
+    ('The Dark Knight', 3, 'Screen 1', interval '2 day', 240.00),
+    ('Interstellar', 1, 'Screen 3', interval '1 day 4 hour', 250.00),
+    ('Parasite', 2, 'Screen 1', interval '1 day', 200.00),
+    ('La La Land', 3, 'Screen 2', interval '2 day', 210.00),
+    ('Oppenheimer', 1, 'Screen 1', interval '1 day 2 hour', 280.00),
+    ('Oppenheimer', 2, 'Screen 3', interval '2 day 1 hour', 280.00),
+    ('Dune', 3, 'Screen 1', interval '1 day', 230.00),
+    ('Spider-Man: Into the Spider-Verse', 2, 'Screen 2', interval '1 day 1 hour', 200.00),
+    ('Whiplash', 1, 'Screen 3', interval '2 day', 190.00),
+    ('Knives Out', 3, 'Screen 2', interval '1 day 5 hour', 210.00)
+) AS s(movie_title, theatre_id, screen, offset_interval, price)
+JOIN movies m ON m.title = s.movie_title
+JOIN theatres t ON t.theatre_id = s.theatre_id
 ON CONFLICT DO NOTHING;
 
 -- Generate 10 seats (A1-A10) for each show

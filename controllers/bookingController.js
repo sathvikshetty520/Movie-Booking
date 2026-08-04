@@ -114,4 +114,12 @@ const getBookingConfirmation = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: booking });
 });
 
-module.exports = { bookTickets, cancelBooking, getBookingConfirmation };
+const getMyBookings = asyncHandler(async (req, res) => {
+  const userId = parseInt(req.params.user_id, 10);
+  if (!userId) throw new AppError('Valid user_id is required', 400);
+
+  const bookings = await BookingModel.getBookingsByUser(userId);
+  res.status(200).json({ success: true, count: bookings.length, data: bookings });
+});
+
+module.exports = { bookTickets, cancelBooking, getBookingConfirmation, getMyBookings };
