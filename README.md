@@ -122,3 +122,4 @@ Groq API returned 404: model_not_found	Check GROQ_MODEL matches an available mod
 One or more seats do not belong to this show	You used stale/wrong seat_ids — always fetch seat IDs from GET /shows/:id/seats first, they are not the same across shows
 ECONNREFUSED on Postgres/Redis	Confirm both services are running (psql -U postgres -c "SELECT 1;", redis-cli ping)
 .env not loading	Confirm you're running npm run dev from inside the project root (same folder as package.json)
+added few things
