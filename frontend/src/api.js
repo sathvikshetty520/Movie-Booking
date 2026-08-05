@@ -16,6 +16,8 @@ async function request(path, options = {}) {
 
 export const api = {
   getMovies: () => request('/movies'),
+  getMovieById: (movieId) => request(`/movies/${movieId}`),
+  getAllShows: () => request('/shows'),
   getSeats: (showId) => request(`/shows/${showId}/seats`),
   lockSeats: (showId, userId, seatIds) =>
     request(`/shows/${showId}/lock-seats`, {
@@ -34,6 +36,7 @@ export const api = {
     }),
   cancelBooking: (bookingId) =>
     request(`/bookings/${bookingId}/cancel`, { method: 'PATCH' }),
+  getMyBookings: (userId) => request(`/users/${userId}/bookings`),
   getRecommendations: (userId) => request(`/recommendations/${userId}`),
 };
 
