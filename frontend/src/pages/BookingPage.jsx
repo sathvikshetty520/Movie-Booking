@@ -100,12 +100,15 @@ export default function BookingPage() {
           onToggleSeat={toggleSeat}
           lockedByMe={lockedByMe}
         />
-        <div className="legend">
-          <span><i className="dot available" /> Available</span>
-          <span><i className="dot selected" /> Selected</span>
-          <span><i className="dot locked-mine" /> Locked by you</span>
-          <span><i className="dot booked" /> Booked</span>
-        </div>
+      <div className="legend">
+      <span><i className="dot available" /> Available</span>
+  <span><i className="dot selected" /> Selected</span>
+  <span><i className="dot locked-mine" /> Locked by you</span>
+  <span><i className="dot booked" /> Booked</span>
+  <span><i className="dot premium" /> Premium</span>
+  <span><i className="dot recliner" /> Recliner</span>
+  <span><i className="dot accessible" /> Accessible</span>
+</div>
 
         {!lockedByMe.length && !lastBooking && (
           <button className="btn primary" disabled={!selectedSeatIds.length || loading} onClick={handleLock}>

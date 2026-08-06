@@ -11,7 +11,7 @@ INSERT INTO movies (title, genre, language, duration_mins, rating, is_now_showin
 ('Spider-Man: Into the Spider-Verse', 'Animation', 'English', 117, 8.4, TRUE),
 ('Whiplash', 'Drama', 'English', 106, 8.5, TRUE),
 ('Knives Out', 'Mystery', 'English', 130, 7.9, TRUE)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (title) DO NOTHING;
 
 INSERT INTO theatres (name, city) VALUES
 ('PVR Forum Mall', 'Bengaluru'),
@@ -40,12 +40,26 @@ FROM (
 ) AS s(movie_title, theatre_id, screen, offset_interval, price)
 JOIN movies m ON m.title = s.movie_title
 JOIN theatres t ON t.theatre_id = s.theatre_id
-ON CONFLICT DO NOTHING;
+ON CONFLICT (movie_id, theatre_id, screen_name, show_time) DO NOTHING;
 
--- Generate 10 seats (A1-A10) for each show
-INSERT INTO seats (show_id, seat_number, status)
-SELECT s.show_id, 'A' || gs, 'AVAILABLE'
-FROM shows s, generate_series(1, 10) gs
+-- Realistic theatre layout: 8 rows (A-H) x 12 seats, with a center aisle (handled visually
+-- on the frontend). Row-based seat types: A/B = Regular (with 2 accessible seats at the aisle
+-- ends of row A), C/D/E = Premium, F/G/H = Recliner (back rows, priciest).
+INSERT INTO seats (show_id, seat_number, row_label, seat_type, status)
+SELECT
+  s.show_id,
+  r.row_label || col.n,
+  r.row_label,
+  CASE
+    WHEN r.row_label = 'A' AND col.n IN (1, 12) THEN 'ACCESSIBLE'
+    WHEN r.row_label IN ('A', 'B') THEN 'REGULAR'
+    WHEN r.row_label IN ('C', 'D', 'E') THEN 'PREMIUM'
+    ELSE 'RECLINER'
+  END,
+  'AVAILABLE'
+FROM shows s
+CROSS JOIN (VALUES ('A'), ('B'), ('C'), ('D'), ('E'), ('F'), ('G'), ('H')) AS r(row_label)
+CROSS JOIN generate_series(1, 12) AS col(n)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO users (name, email) VALUES

@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS movies (
     movie_id      SERIAL PRIMARY KEY,
-    title         VARCHAR(255) NOT NULL,
+    title         VARCHAR(255) NOT NULL UNIQUE,
     genre         VARCHAR(100),
     language      VARCHAR(50),
     duration_mins INT,
@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS shows (
     show_time    TIMESTAMP NOT NULL,
     price        NUMERIC(8,2) NOT NULL DEFAULT 200.00,
     total_seats  INT NOT NULL DEFAULT 60
+    UNIQUE (movie_id, theatre_id, screen_name, show_time)
 );
 
 -- One row per seat per show
@@ -33,6 +34,8 @@ CREATE TABLE IF NOT EXISTS seats (
     seat_id      SERIAL PRIMARY KEY,
     show_id      INT NOT NULL REFERENCES shows(show_id) ON DELETE CASCADE,
     seat_number  VARCHAR(10) NOT NULL,       -- e.g. A1, A2, B5
+    row_label    VARCHAR(2) NOT NULL,        -- e.g. A, B, C
+    seat_type    VARCHAR(20) NOT NULL DEFAULT 'REGULAR', -- REGULAR, PREMIUM, RECLINER, ACCESSIBLE
     status       VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE', -- AVAILABLE, BOOKED
     UNIQUE (show_id, seat_number)
 );
