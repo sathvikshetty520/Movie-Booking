@@ -3,8 +3,9 @@ const pool = require('../config/db');
 const SeatModel = {
   async getSeatsByShow(showId) {
   const { rows } = await pool.query(
-    `SELECT seat_id, show_id, seat_number, status
-     FROM seats WHERE show_id = $1 ORDER BY seat_number`,
+    `SELECT seat_id, show_id, seat_number, row_label, seat_type, status
+     FROM seats WHERE show_id = $1
+     ORDER BY row_label, (regexp_replace(seat_number, '[^0-9]', '', 'g'))::int`,
     [showId]
   );
   return rows;

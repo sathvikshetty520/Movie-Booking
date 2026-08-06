@@ -316,8 +316,9 @@ h1, h2, h3, .brand, .rating-badge {
 }
 .row-seats {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
 }
 .aisle-gap { width: 18px; flex-shrink: 0; }
 
@@ -337,19 +338,32 @@ h1, h2, h3, .brand, .rating-badge {
 }
 .seat:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--red); }
 
-/* Seat type variants (shape/size differences for realism) */
-.seat-premium { border-color: var(--gold); }
+/* Seat type variants — distinct fill colors so types are obvious at a glance */
+.seat-regular.seat-available { background: #f0ece1; border-color: var(--line); }
+
+.seat-premium.seat-available {
+  background: #f7e8c8;
+  border-color: var(--gold);
+}
+
 .seat-recliner {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px 6px 12px 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px 7px 14px 14px;
   border-width: 2px;
+}
+.seat-recliner.seat-available {
+  background: #d7e6f2;
   border-color: var(--seat-locked);
 }
+
 .seat-accessible {
   border-radius: 50%;
+  font-size: 13px;
+}
+.seat-accessible.seat-available {
+  background: #d9f0e1;
   border-color: var(--success);
-  font-size: 12px;
 }
 
 /* Seat state overrides (state wins over type color, but type shape persists) */
@@ -365,10 +379,9 @@ h1, h2, h3, .brand, .rating-badge {
 .dot.selected { background: var(--seat-selected); border-color: var(--seat-selected); }
 .dot.locked-mine { background: var(--seat-locked); border-color: var(--seat-locked); }
 .dot.booked { background: var(--seat-booked); border-color: var(--seat-booked); }
-.dot.premium { background: var(--seat-available); border-color: var(--gold); }
-.dot.recliner { background: var(--seat-available); border-color: var(--seat-locked); border-width: 2px; border-radius: 6px; }
-.dot.accessible { background: var(--seat-available); border-color: var(--success); border-radius: 50%; }
-
+.dot.premium { background: #f7e8c8; border-color: var(--gold); }
+.dot.recliner { background: #d7e6f2; border-color: var(--seat-locked); border-width: 2px; border-radius: 6px; }
+.dot.accessible { background: #d9f0e1; border-color: var(--success); border-radius: 50%; }
 /* ---------- Buttons ---------- */
 .btn {
   width: 100%;

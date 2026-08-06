@@ -3,7 +3,8 @@
 A full-stack movie ticket booking application with Redis-based concurrency
 control, PostgreSQL storage, real-time booking confirmation (Socket.io),
 AI-powered recommendations (Groq), and a React frontend with real movie
-posters (TMDB) — similar in spirit to BookMyShow.
+posters (TMDB) and a realistic theatre seat map — similar in spirit to
+BookMyShow.
 
 ## Architecture
 
@@ -41,6 +42,8 @@ pages/ -> Home, Movies, MovieDetail, Shows, Booking, MyBookings
 - React Router — multi-page navigation (Home / Movies / Shows / My Bookings)
 - Socket.io client — live booking confirmation toasts
 - TMDB API — real movie posters (fetched into the DB via a script, not called live from the frontend)
+- Custom theatre-style seat map — rows, center aisle, screen indicator, and
+  distinct seat types (Regular / Premium / Recliner / Accessible)
 
 ## Setup
 
@@ -76,23 +79,31 @@ TMDB_API_KEY=your_tmdb_key_here
 - Get a free Groq key: https://console.groq.com/keys
 - Get a free TMDB key: https://www.themoviedb.org/settings/api
 
-### 3. Create the database
+### 3. Create the database (fresh setup)
 \```bash
 createdb ticket_booking
 psql -U postgres -d ticket_booking -f sql/schema.sql
 psql -U postgres -d ticket_booking -f sql/seed.sql
 \```
-If you already had an older version of this DB (without poster columns), run
-the migration instead of dropping everything:
+
+If you already have an older version of this DB, run the migrations instead
+of dropping everything:
 \```bash
 psql -U postgres -d ticket_booking -f sql/migration_add_posters.sql
+psql -U postgres -d ticket_booking -f sql/migration_add_seat_types.sql
+\```
+Then add the uniqueness constraints that prevent duplicate seed data on
+re-runs (only needed once, skip if already applied):
+\```bash
+psql -U postgres -d ticket_booking -c "ALTER TABLE movies ADD CONSTRAINT movies_title_unique UNIQUE (title);"
+psql -U postgres -d ticket_booking -c "ALTER TABLE shows ADD CONSTRAINT shows_unique_slot UNIQUE (movie_id, theatre_id, screen_name, show_time);"
 \```
 
 ### 4. Fetch real movie posters from TMDB
 \```bash
 node scripts/fetch-posters.js
 \```
-This looks up each seeded movie (Inception, The Dark Knight, Interstellar,
+Looks up each seeded movie (Inception, The Dark Knight, Interstellar,
 Parasite, La La Land, Oppenheimer, Dune, Spider-Man: Into the Spider-Verse,
 Whiplash, Knives Out) on TMDB and saves the real poster URL + rating.
 
@@ -122,11 +133,28 @@ Runs at `http://localhost:5173`.
 - **Movies** (`/movies`) — full catalog with genre filter
 - **Movie detail** (`/movies/:id`) — poster, info, showtimes grouped by theatre
 - **Shows** (`/shows`) — flat list of every scheduled show across all movies
-- **Booking** (`/book/:showId`) — seat grid → lock seats → confirm booking
+- **Booking** (`/book/:showId`) — realistic theatre seat map → lock seats → confirm booking
 - **My Bookings** (`/my-bookings`) — booking history + cancel
 
 A live toast notification appears the instant a booking is confirmed
 (Socket.io), separate from the page's own success message.
+
+### Theatre Seat Map
+
+Each show has an 8-row (A–H) x 12-seat layout with a center aisle and a
+curved "SCREEN" indicator at the top, generated in `sql/seed.sql`:
+
+| Rows | Seat Type | Look |
+|---|---|---|
+| A, B | Regular | tan fill |
+| A1, A12 (aisle ends) | Accessible (♿) | green fill, circular |
+| C, D, E | Premium | gold fill |
+| F, G, H | Recliner | blue fill, larger button |
+
+Seat state (available / selected / locked-by-you / booked) is layered on top
+of the type color, so you can tell both *what kind* of seat it is and
+*whether you can book it* at a glance. The full legend is shown under the
+seat map on the booking page.
 
 ## Testing with Postman
 
@@ -137,7 +165,7 @@ all shows, user bookings) can be tested the same way — see `docs/API_DOCUMENTA
 **Recommended order** (booking is stateful):
 1. Get Movies and Shows → note a `show_id`
 2. Get Available Seats → note `AVAILABLE` `seat_id`s (unique per row, always
-   fetch fresh — don't assume 1,2,3 across shows)
+   fetch fresh — don't assume IDs are the same across shows)
 3. Lock Seats
 4. Book Tickets → save the returned `booking_id`
 5. Cancel Booking / Booking Confirmation Event
@@ -148,7 +176,7 @@ all shows, user bookings) can be tested the same way — see `docs/API_DOCUMENTA
 | # | Method | Endpoint | Purpose |
 |---|--------|----------|---------|
 | 1 | GET | `/api/movies` | Movies + shows (Redis cached, 300s TTL) |
-| 2 | GET | `/api/shows/:show_id/seats` | Seat availability (Redis cached, 30s TTL) |
+| 2 | GET | `/api/shows/:show_id/seats` | Seat availability, row/type included (Redis cached, 30s TTL) |
 | 3 | POST | `/api/shows/:show_id/lock-seats` | Lock seats before booking (Redis, TTL) |
 | 3b| POST | `/api/shows/:show_id/unlock-seats` | Manually release a lock (helper) |
 | 4 | POST | `/api/bookings` | Confirm booking (validates lock, DB transaction) |
@@ -218,8 +246,13 @@ the booking page's own confirmation message.
 | `GROQ_API_KEY not set` warning | Check `.env` has `GROQ_API_KEY=gsk_...` (no quotes), restart server |
 | `Groq API returned 404: model_not_found` | Confirm `GROQ_MODEL` is valid, e.g. `llama-3.3-70b-versatile` |
 | No poster images showing | Run `node scripts/fetch-posters.js`; confirm `TMDB_API_KEY` is set; clear cache: `redis-cli DEL movies:with_shows` |
-| `column "poster_url" does not exist` | Run `sql/migration_add_posters.sql` (if DB predates this update) |
+| `column "poster_url" does not exist` | Run `sql/migration_add_posters.sql` |
+| `column "seat_type" does not exist` | Run `sql/migration_add_seat_types.sql` |
+| Movies/shows appear duplicated | `sql/seed.sql` was run more than once without unique constraints. Dedupe with `DELETE FROM movies WHERE movie_id NOT IN (SELECT MIN(movie_id) FROM movies GROUP BY title);` (same pattern for `shows`), then add the `UNIQUE` constraints shown in Setup step 3 |
+| Seat numbers out of order (A1, A10, A11, A2...) | Text sort instead of numeric — confirm `models/seatModel.js` uses `ORDER BY row_label, (regexp_replace(seat_number, '[^0-9]', '', 'g'))::int` |
+| All seats look the same color | Confirm `seat_type` is actually populated (`SELECT DISTINCT seat_type FROM seats;`) and that `App.css` has the `.seat-premium`, `.seat-recliner`, `.seat-accessible` fill-color rules |
 | `One or more seats do not belong to this show` | Fetch fresh `seat_id`s from `GET /shows/:id/seats` — they're not the same across shows |
 | Frontend shows "Internal server error" | Check the **backend terminal** for the real stack trace — the frontend only shows a generic message |
 | `ECONNREFUSED` on Postgres/Redis | Confirm both are running: `psql -U postgres -c "SELECT 1;"`, `redis-cli ping` |
 | CORS errors in browser console | Confirm `cors` middleware is enabled in `server.js` (`app.use(cors())`) |
+
