@@ -45,15 +45,17 @@ ON CONFLICT (movie_id, theatre_id, screen_name, show_time) DO NOTHING;
 -- Realistic theatre layout: 8 rows (A-H) x 12 seats, with a center aisle (handled visually
 -- on the frontend). Row-based seat types: A/B = Regular (with 2 accessible seats at the aisle
 -- ends of row A), C/D/E = Premium, F/G/H = Recliner (back rows, priciest).
+-- Layout: A,B,C = Regular (3 rows) | D,E,F = Premium (3 rows) | G,H = Recliner (2 rows)
+-- Accessible seats live in the recliner section, at the two aisle ends of row G.
 INSERT INTO seats (show_id, seat_number, row_label, seat_type, status)
 SELECT
   s.show_id,
   r.row_label || col.n,
   r.row_label,
   CASE
-    WHEN r.row_label = 'A' AND col.n IN (1, 12) THEN 'ACCESSIBLE'
-    WHEN r.row_label IN ('A', 'B') THEN 'REGULAR'
-    WHEN r.row_label IN ('C', 'D', 'E') THEN 'PREMIUM'
+    WHEN r.row_label = 'G' AND col.n IN (1, 12) THEN 'ACCESSIBLE'
+    WHEN r.row_label IN ('A', 'B', 'C') THEN 'REGULAR'
+    WHEN r.row_label IN ('D', 'E', 'F') THEN 'PREMIUM'
     ELSE 'RECLINER'
   END,
   'AVAILABLE'
