@@ -12,12 +12,13 @@ const SeatModel = {
 },
 
   async getSeatsByIds(seatIds) {
-    const { rows } = await pool.query(
-      `SELECT seat_id, show_id, seat_number, status FROM seats WHERE seat_id = ANY($1::int[])`,
-      [seatIds]
-    );
-    return rows;
-  },
+  const { rows } = await pool.query(
+    `SELECT seat_id, show_id, seat_number, seat_type, status 
+     FROM seats WHERE seat_id = ANY($1::int[])`,
+    [seatIds]
+  );
+  return rows;
+},
 
   // Marks seats BOOKED only if they are currently AVAILABLE (atomic guard against double booking)
   async markSeatsBooked(seatIds, client) {

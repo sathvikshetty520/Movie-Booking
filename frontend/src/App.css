@@ -463,3 +463,35 @@ h1, h2, h3, .brand, .rating-badge {
   from { transform: translateX(20px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+
+/* ---------- Price breakdown ---------- */
+.price-breakdown {
+  background: var(--paper);
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin: 16px 0;
+}
+.price-breakdown h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 15px;
+  letter-spacing: 1px;
+  margin: 0 0 10px;
+  color: var(--ink-dim);
+}
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+  color: var(--ink);
+}
+.price-row em { color: var(--ink-dim); font-style: normal; font-size: 11px; }
+.price-total {
+  border-top: 1px solid var(--line);
+  margin-top: 6px;
+  padding-top: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--red);
+}

@@ -4,6 +4,7 @@ const BookingModel = require('../models/bookingModel');
 const { validateLocks, releaseSeats } = require('../services/lockService');
 const { invalidate } = require('../services/cacheService');
 const { emitBookingConfirmed, emitBookingCancelled } = require('../services/eventService');
+const { calculateTotal, priceForSeat } = require('../utils/pricing');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../middleware/asyncHandler');
 const logger = require('../utils/logger');
@@ -28,18 +29,21 @@ const bookTickets = asyncHandler(async (req, res) => {
     const bookedSeatIds = await SeatModel.markSeatsBooked(seatIds, client);
 
     if (bookedSeatIds.length !== seatIds.length) {
-      // Some seat was already booked by someone else between lock and confirm
       await client.query('ROLLBACK');
       throw new AppError('One or more seats were already booked. Please pick different seats.', 409);
     }
 
-    // Step 3: Compute total amount from show price
+    // Step 3: Compute total amount using per-seat-type pricing (never trust a
+    // client-supplied amount — always recalculate authoritatively here)
     const priceRes = await client.query('SELECT price FROM shows WHERE show_id = $1', [showId]);
     if (!priceRes.rows.length) {
       await client.query('ROLLBACK');
       throw new AppError('Show not found', 404);
     }
-    const totalAmount = parseFloat(priceRes.rows[0].price) * seatIds.length;
+    const basePrice = parseFloat(priceRes.rows[0].price);
+
+    const seatDetails = await SeatModel.getSeatsByIds(seatIds);
+    const totalAmount = calculateTotal(basePrice, seatDetails);
 
     // Step 4: Create booking record
     const booking = await BookingModel.createBooking(
@@ -102,7 +106,6 @@ const cancelBooking = asyncHandler(async (req, res) => {
 });
 
 // GET /api/bookings/:booking_id/confirmation
-// Re-fetches booking and re-emits the real-time confirmation event (e.g. for reconnect/replay)
 const getBookingConfirmation = asyncHandler(async (req, res) => {
   const bookingId = parseInt(req.params.booking_id, 10);
   const booking = await BookingModel.getBookingById(bookingId);
@@ -114,6 +117,7 @@ const getBookingConfirmation = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: booking });
 });
 
+// GET /api/users/:user_id/bookings
 const getMyBookings = asyncHandler(async (req, res) => {
   const userId = parseInt(req.params.user_id, 10);
   if (!userId) throw new AppError('Valid user_id is required', 400);
@@ -122,4 +126,38 @@ const getMyBookings = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, count: bookings.length, data: bookings });
 });
 
-module.exports = { bookTickets, cancelBooking, getBookingConfirmation, getMyBookings };
+// POST /api/shows/:show_id/quote
+// Body: { seat_ids: [1,2,3] }
+// Returns a per-seat price breakdown WITHOUT locking or booking anything —
+// used by the frontend to show "Premium x2 = ₹500" before the user commits.
+const getPriceQuote = asyncHandler(async (req, res) => {
+  const showId = parseInt(req.params.show_id, 10);
+  const { seat_ids: seatIds } = req.body;
+
+  if (!showId) throw new AppError('Valid show_id is required', 400);
+  if (!Array.isArray(seatIds) || seatIds.length === 0) {
+    throw new AppError('seat_ids must be a non-empty array', 400);
+  }
+
+  const priceRes = await pool.query('SELECT price FROM shows WHERE show_id = $1', [showId]);
+  if (!priceRes.rows.length) throw new AppError('Show not found', 404);
+  const basePrice = parseFloat(priceRes.rows[0].price);
+
+  const seatDetails = await SeatModel.getSeatsByIds(seatIds);
+  if (seatDetails.length !== seatIds.length) {
+    throw new AppError('One or more seat_ids are invalid', 400);
+  }
+
+  const breakdown = seatDetails.map((seat) => ({
+    seat_id: seat.seat_id,
+    seat_number: seat.seat_number,
+    seat_type: seat.seat_type,
+    price: priceForSeat(basePrice, seat.seat_type),
+  }));
+
+  const totalAmount = calculateTotal(basePrice, seatDetails);
+
+  res.status(200).json({ success: true, base_price: basePrice, breakdown, total_amount: totalAmount });
+});
+
+module.exports = { bookTickets, cancelBooking, getBookingConfirmation, getMyBookings, getPriceQuote };

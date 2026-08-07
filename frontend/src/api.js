@@ -19,6 +19,11 @@ export const api = {
   getMovieById: (movieId) => request(`/movies/${movieId}`),
   getAllShows: () => request('/shows'),
   getSeats: (showId) => request(`/shows/${showId}/seats`),
+  getPriceQuote: (showId, seatIds) =>
+    request(`/shows/${showId}/quote`, {
+      method: 'POST',
+      body: JSON.stringify({ seat_ids: seatIds }),
+    }),
   lockSeats: (showId, userId, seatIds) =>
     request(`/shows/${showId}/lock-seats`, {
       method: 'POST',

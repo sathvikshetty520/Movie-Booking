@@ -13,6 +13,7 @@ export default function BookingPage() {
   const [showInfo, setShowInfo] = useState(null);
   const [selectedSeatIds, setSelectedSeatIds] = useState([]);
   const [lockedByMe, setLockedByMe] = useState([]);
+  const [quote, setQuote] = useState(null); // { breakdown, total_amount }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastBooking, setLastBooking] = useState(null);
@@ -24,6 +25,17 @@ export default function BookingPage() {
       if (found) setShowInfo(found);
     }).catch(() => {});
   }, [showId]);
+
+  // fetch a live price breakdown whenever the selection changes (pre-lock preview)
+  useEffect(() => {
+    if (!selectedSeatIds.length || lockedByMe.length) {
+      if (!selectedSeatIds.length) setQuote(null);
+      return;
+    }
+    api.getPriceQuote(showId, selectedSeatIds)
+      .then((res) => setQuote(res))
+      .catch(() => setQuote(null));
+  }, [selectedSeatIds, showId, lockedByMe.length]);
 
   const loadSeats = async () => {
     try {
@@ -48,6 +60,9 @@ export default function BookingPage() {
     try {
       const res = await api.lockSeats(showId, userId, selectedSeatIds);
       setLockedByMe(res.seatIds);
+      // refresh quote against the confirmed locked set
+      const q = await api.getPriceQuote(showId, res.seatIds);
+      setQuote(q);
       pushToast('Seats Locked 🔒', `You have ${res.ttlSeconds}s to confirm your booking`, 'info');
     } catch (e) {
       setError(e.message);
@@ -65,6 +80,7 @@ export default function BookingPage() {
       setLastBooking(res.data);
       setSelectedSeatIds([]);
       setLockedByMe([]);
+      setQuote(null);
       loadSeats();
     } catch (e) {
       setError(e.message);
@@ -73,8 +89,6 @@ export default function BookingPage() {
       setLoading(false);
     }
   };
-
-  const price = showInfo?.price || 0;
 
   return (
     <div className="page">
@@ -100,15 +114,39 @@ export default function BookingPage() {
           onToggleSeat={toggleSeat}
           lockedByMe={lockedByMe}
         />
-      <div className="legend">
-      <span><i className="dot available" /> Available</span>
-  <span><i className="dot selected" /> Selected</span>
-  <span><i className="dot locked-mine" /> Locked by you</span>
-  <span><i className="dot booked" /> Booked</span>
-  <span><i className="dot premium" /> Premium</span>
-  <span><i className="dot recliner" /> Recliner</span>
-  <span><i className="dot accessible" /> Accessible</span>
-</div>
+        <div className="legend">
+          <span><i className="dot available" /> Available</span>
+          <span><i className="dot selected" /> Selected</span>
+          <span><i className="dot locked-mine" /> Locked by you</span>
+          <span><i className="dot booked" /> Booked</span>
+          <span><i className="dot premium" /> Premium (×1.5)</span>
+          <span><i className="dot recliner" /> Recliner (×2)</span>
+          <span><i className="dot accessible" /> Accessible</span>
+        </div>
+
+        {quote && !lastBooking && (
+          <div className="price-breakdown">
+            <h3>Price Breakdown</h3>
+            {quote.breakdown.map((item) => (
+  <div key={item.seat_id} className="price-row">
+    <span>
+      {item.seat_number}{" "}
+      <em>
+        ({typeof item.seat_type === "string"
+          ? item.seat_type.charAt(0).toUpperCase() + item.seat_type.slice(1).toLowerCase()
+          : "Unknown"})
+      </em>
+    </span>
+    <span>₹{item.price}</span>
+  </div>
+))}
+
+            <div className="price-row price-total">
+              <span>Total</span>
+              <span>₹{quote.total_amount}</span>
+            </div>
+          </div>
+        )}
 
         {!lockedByMe.length && !lastBooking && (
           <button className="btn primary" disabled={!selectedSeatIds.length || loading} onClick={handleLock}>
@@ -118,7 +156,7 @@ export default function BookingPage() {
 
         {lockedByMe.length > 0 && !lastBooking && (
           <button className="btn success" disabled={loading} onClick={handleBook}>
-            Confirm Booking ({lockedByMe.length} seats · ₹{lockedByMe.length * price})
+            Confirm Booking (₹{quote?.total_amount ?? '...'})
           </button>
         )}
 
