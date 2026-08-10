@@ -4,17 +4,20 @@ function initEvents(io) {
   ioInstance = io;
 
   io.on('connection', (socket) => {
-    // Client joins a room named after their user_id to receive personal booking events
     socket.on('join', (userId) => {
       socket.join(`user:${userId}`);
+    });
+
+    socket.on('join_show', (showId) => {
+      socket.join(`show:${showId}`);
+    });
+
+    socket.on('leave_show', (showId) => {
+      socket.leave(`show:${showId}`);
     });
   });
 }
 
-/**
- * Emits a real-time booking confirmation event to the user's room
- * and to a global "bookings" feed (e.g. for an admin dashboard).
- */
 function emitBookingConfirmed(userId, payload) {
   if (!ioInstance) return;
   ioInstance.to(`user:${userId}`).emit('booking:confirmed', payload);
@@ -27,4 +30,19 @@ function emitBookingCancelled(userId, payload) {
   ioInstance.emit('bookings:feed', payload);
 }
 
-module.exports = { initEvents, emitBookingConfirmed, emitBookingCancelled };
+function emitSeatUpdate(showId, seatIds, status, excludeUserId = null) {
+  if (!ioInstance) return;
+  ioInstance.to(`show:${showId}`).emit('seat:update', {
+    show_id: showId,
+    seat_ids: seatIds,
+    status,
+    by_user_id: excludeUserId,
+  });
+}
+
+module.exports = {
+  initEvents,
+  emitBookingConfirmed,
+  emitBookingCancelled,
+  emitSeatUpdate,
+};

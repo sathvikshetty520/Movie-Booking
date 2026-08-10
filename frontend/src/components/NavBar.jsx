@@ -1,9 +1,15 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../AppContext';
 
 export default function NavBar() {
-  const { userId } = useApp();
+  const { user, logout } = useApp();
+  const navigate = useNavigate();
   const linkClass = ({ isActive }) => `nav-link ${isActive ? 'active' : ''}`;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="navbar">
@@ -13,9 +19,16 @@ export default function NavBar() {
           <NavLink to="/" end className={linkClass}>Home</NavLink>
           <NavLink to="/movies" className={linkClass}>Movies</NavLink>
           <NavLink to="/shows" className={linkClass}>Shows</NavLink>
-          <NavLink to="/my-bookings" className={linkClass}>My Bookings</NavLink>
+          {user && <NavLink to="/my-bookings" className={linkClass}>My Bookings</NavLink>}
         </nav>
-        <span className="user-badge">User #{userId}</span>
+        {user ? (
+          <div className="user-menu">
+            <span className="user-badge">{user.name}</span>
+            <button className="logout-btn" onClick={handleLogout}>Log Out</button>
+          </div>
+        ) : (
+          <NavLink to="/login" className="btn-login">Log In</NavLink>
+        )}
       </div>
     </header>
   );

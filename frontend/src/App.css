@@ -495,3 +495,44 @@ h1, h2, h3, .brand, .rating-badge {
   font-size: 15px;
   color: var(--red);
 }
+
+/* ---------- Auth pages ---------- */
+.auth-page { display: flex; justify-content: center; padding-top: 40px; }
+.auth-form { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 4px; }
+.auth-form h2 { margin: 0 0 4px; }
+.auth-form label { font-size: 12px; font-weight: 600; color: var(--ink-dim); margin-top: 10px; }
+.auth-form input {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  margin-top: 4px;
+}
+.auth-form input:focus { outline: none; border-color: var(--red); }
+.auth-form .btn { margin-top: 18px; }
+.auth-switch { font-size: 13px; color: var(--ink-dim); text-align: center; margin-top: 14px; }
+.auth-switch a { color: var(--red); font-weight: 600; text-decoration: none; }
+
+/* ---------- Navbar user menu ---------- */
+.user-menu { display: flex; align-items: center; gap: 10px; }
+.logout-btn {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.logout-btn:hover { border-color: var(--red); color: var(--red); }
+.btn-login {
+  background: var(--red);
+  color: #fff;
+  text-decoration: none;
+  padding: 7px 16px;
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 700;
+}

@@ -7,16 +7,17 @@ import SeatGrid from '../components/SeatGrid';
 export default function BookingPage() {
   const { showId } = useParams();
   const navigate = useNavigate();
-  const { userId, pushToast } = useApp();
+  const { user, pushToast, socket } = useApp();
 
   const [seats, setSeats] = useState([]);
   const [showInfo, setShowInfo] = useState(null);
   const [selectedSeatIds, setSelectedSeatIds] = useState([]);
   const [lockedByMe, setLockedByMe] = useState([]);
-  const [quote, setQuote] = useState(null); // { breakdown, total_amount }
+  const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastBooking, setLastBooking] = useState(null);
+  const [viewerNotice, setViewerNotice] = useState('');
 
   useEffect(() => {
     loadSeats();
@@ -26,15 +27,42 @@ export default function BookingPage() {
     }).catch(() => {});
   }, [showId]);
 
-  // fetch a live price breakdown whenever the selection changes (pre-lock preview)
+  useEffect(() => {
+    if (!socket) return;
+    socket.emit('join_show', showId);
+
+    const handleSeatUpdate = (payload) => {
+      if (String(payload.show_id) !== String(showId)) return;
+      if (payload.by_user_id === user.user_id) return;
+
+      setSeats((prev) =>
+        prev.map((seat) =>
+          payload.seat_ids.includes(seat.seat_id)
+            ? { ...seat, status: payload.status === 'BOOKED' ? 'BOOKED' : 'AVAILABLE' }
+            : seat
+        )
+      );
+      setSelectedSeatIds((prev) => prev.filter((id) => !payload.seat_ids.includes(id)));
+
+      if (payload.status === 'LOCKED') setViewerNotice('Another user just selected a seat');
+      else if (payload.status === 'BOOKED') setViewerNotice('A seat was just booked by another user');
+      else setViewerNotice('A seat became available again');
+      setTimeout(() => setViewerNotice(''), 3000);
+    };
+
+    socket.on('seat:update', handleSeatUpdate);
+    return () => {
+      socket.emit('leave_show', showId);
+      socket.off('seat:update', handleSeatUpdate);
+    };
+  }, [socket, showId, user]);
+
   useEffect(() => {
     if (!selectedSeatIds.length || lockedByMe.length) {
       if (!selectedSeatIds.length) setQuote(null);
       return;
     }
-    api.getPriceQuote(showId, selectedSeatIds)
-      .then((res) => setQuote(res))
-      .catch(() => setQuote(null));
+    api.getPriceQuote(showId, selectedSeatIds).then(setQuote).catch(() => setQuote(null));
   }, [selectedSeatIds, showId, lockedByMe.length]);
 
   const loadSeats = async () => {
@@ -58,15 +86,15 @@ export default function BookingPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.lockSeats(showId, userId, selectedSeatIds);
+      const res = await api.lockSeats(showId, selectedSeatIds);
       setLockedByMe(res.seatIds);
-      // refresh quote against the confirmed locked set
       const q = await api.getPriceQuote(showId, res.seatIds);
       setQuote(q);
       pushToast('Seats Locked 🔒', `You have ${res.ttlSeconds}s to confirm your booking`, 'info');
     } catch (e) {
       setError(e.message);
       pushToast('Lock Failed', e.message, 'error');
+      loadSeats();
     } finally {
       setLoading(false);
     }
@@ -76,7 +104,7 @@ export default function BookingPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.bookTickets(userId, showId, lockedByMe);
+      const res = await api.bookTickets(showId, lockedByMe);
       setLastBooking(res.data);
       setSelectedSeatIds([]);
       setLockedByMe([]);
@@ -105,6 +133,7 @@ export default function BookingPage() {
       )}
 
       {error && <div className="error-banner">{error}</div>}
+      {viewerNotice && <div className="live-notice">🔴 Live: {viewerNotice}</div>}
 
       <div className="panel booking-panel">
         <h2>Select Seats</h2>
@@ -128,19 +157,11 @@ export default function BookingPage() {
           <div className="price-breakdown">
             <h3>Price Breakdown</h3>
             {quote.breakdown.map((item) => (
-  <div key={item.seat_id} className="price-row">
-    <span>
-      {item.seat_number}{" "}
-      <em>
-        ({typeof item.seat_type === "string"
-          ? item.seat_type.charAt(0).toUpperCase() + item.seat_type.slice(1).toLowerCase()
-          : "Unknown"})
-      </em>
-    </span>
-    <span>₹{item.price}</span>
-  </div>
-))}
-
+              <div key={item.seat_id} className="price-row">
+                <span>{item.seat_number} <em>({item.seat_type.charAt(0) + item.seat_type.slice(1).toLowerCase()})</em></span>
+                <span>₹{item.price}</span>
+              </div>
+            ))}
             <div className="price-row price-total">
               <span>Total</span>
               <span>₹{quote.total_amount}</span>

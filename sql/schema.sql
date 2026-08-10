@@ -41,10 +41,11 @@ CREATE TABLE IF NOT EXISTS seats (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-    user_id    SERIAL PRIMARY KEY,
-    name       VARCHAR(255) NOT NULL,
-    email      VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    user_id       SERIAL PRIMARY KEY,
+    name          VARCHAR(255) NOT NULL,
+    email         VARCHAR(255) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at    TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS bookings (

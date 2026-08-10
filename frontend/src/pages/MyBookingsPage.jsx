@@ -1,23 +1,20 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
-import { useApp } from '../AppContext';
 
 export default function MyBookingsPage() {
-  const { userId } = useApp();
   const [bookings, setBookings] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   const load = () => {
     setLoading(true);
-    api
-      .getMyBookings(userId)
+    api.getMyBookings()
       .then((res) => setBookings(res.data))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [userId]);
+  useEffect(() => { load(); }, []);
 
   const handleCancel = async (bookingId) => {
     try {
