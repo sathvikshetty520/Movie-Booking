@@ -20,6 +20,7 @@ export default function NavBar() {
           <NavLink to="/movies" className={linkClass}>Movies</NavLink>
           <NavLink to="/shows" className={linkClass}>Shows</NavLink>
           {user && <NavLink to="/my-bookings" className={linkClass}>My Bookings</NavLink>}
+          {user?.is_admin && <NavLink to="/admin" className={linkClass}>Admin</NavLink>}
         </nav>
         {user ? (
           <div className="user-menu">

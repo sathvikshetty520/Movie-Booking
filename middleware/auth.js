@@ -1,12 +1,6 @@
 const { verifyToken } = require('../utils/jwt');
 const AppError = require('../utils/AppError');
 
-/**
- * Verifies the Bearer token on protected routes and attaches the decoded
- * user info to req.user. Downstream controllers read req.user.userId instead
- * of trusting a user_id passed in the request body — this is what actually
- * proves the caller is who they claim to be.
- */
 function requireAuth(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
@@ -16,11 +10,19 @@ function requireAuth(req, res, next) {
   const token = header.split(' ')[1];
   try {
     const decoded = verifyToken(token);
-    req.user = { userId: decoded.userId, email: decoded.email };
+    req.user = { userId: decoded.userId, email: decoded.email, isAdmin: decoded.isAdmin === true };
     next();
   } catch (err) {
     next(new AppError('Invalid or expired token. Please log in again.', 401));
   }
 }
 
-module.exports = { requireAuth };
+// Must be used AFTER requireAuth — checks the admin flag baked into the JWT
+function requireAdmin(req, res, next) {
+  if (!req.user || !req.user.isAdmin) {
+    return next(new AppError('Admin access required', 403));
+  }
+  next();
+}
+
+module.exports = { requireAuth, requireAdmin };

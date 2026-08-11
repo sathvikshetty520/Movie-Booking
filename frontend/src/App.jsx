@@ -3,7 +3,7 @@ import { AppProvider, useApp } from './AppContext';
 import NavBar from './components/NavBar';
 import Toast from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
-
+import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
 import MoviesPage from './pages/MoviesPage';
 import MovieDetailPage from './pages/MovieDetailPage';
@@ -31,6 +31,7 @@ function AppShell() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/book/:showId" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
           <Route path="/my-bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
         </Routes>
       </main>
     </>

@@ -5,7 +5,7 @@ const UserModel = {
     const { rows } = await pool.query(
       `INSERT INTO users (name, email, password_hash)
        VALUES ($1, $2, $3)
-       RETURNING user_id, name, email, created_at`,
+       RETURNING user_id, name, email, is_admin, created_at`,
       [name, email, passwordHash]
     );
     return rows[0];
@@ -18,7 +18,7 @@ const UserModel = {
 
   async findById(userId) {
     const { rows } = await pool.query(
-      `SELECT user_id, name, email, created_at FROM users WHERE user_id = $1`,
+      `SELECT user_id, name, email, is_admin, created_at FROM users WHERE user_id = $1`,
       [userId]
     );
     return rows[0];

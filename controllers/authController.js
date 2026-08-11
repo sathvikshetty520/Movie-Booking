@@ -7,8 +7,6 @@ const logger = require('../utils/logger');
 
 const SALT_ROUNDS = 10;
 
-// POST /api/auth/register
-// Body: { name, email, password }
 const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -27,7 +25,7 @@ const register = asyncHandler(async (req, res) => {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const user = await UserModel.createUser({ name, email, passwordHash });
 
-  const token = signToken({ userId: user.user_id, email: user.email });
+  const token = signToken({ userId: user.user_id, email: user.email, isAdmin: user.is_admin });
 
   logger.info(`New user registered: ${user.email} (id ${user.user_id})`);
 
@@ -35,12 +33,10 @@ const register = asyncHandler(async (req, res) => {
     success: true,
     message: 'Account created',
     token,
-    user: { user_id: user.user_id, name: user.name, email: user.email },
+    user: { user_id: user.user_id, name: user.name, email: user.email, is_admin: user.is_admin },
   });
 });
 
-// POST /api/auth/login
-// Body: { email, password }
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -49,16 +45,12 @@ const login = asyncHandler(async (req, res) => {
   }
 
   const user = await UserModel.findByEmail(email);
-  if (!user) {
-    throw new AppError('Invalid email or password', 401);
-  }
+  if (!user) throw new AppError('Invalid email or password', 401);
 
   const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) {
-    throw new AppError('Invalid email or password', 401);
-  }
+  if (!valid) throw new AppError('Invalid email or password', 401);
 
-  const token = signToken({ userId: user.user_id, email: user.email });
+  const token = signToken({ userId: user.user_id, email: user.email, isAdmin: user.is_admin });
 
   logger.info(`User logged in: ${user.email} (id ${user.user_id})`);
 
@@ -66,11 +58,10 @@ const login = asyncHandler(async (req, res) => {
     success: true,
     message: 'Login successful',
     token,
-    user: { user_id: user.user_id, name: user.name, email: user.email },
+    user: { user_id: user.user_id, name: user.name, email: user.email, is_admin: user.is_admin },
   });
 });
 
-// GET /api/auth/me  (verify token + get current user info)
 const getMe = asyncHandler(async (req, res) => {
   const user = await UserModel.findById(req.user.userId);
   if (!user) throw new AppError('User not found', 404);

@@ -42,6 +42,7 @@ export const api = {
   cancelBooking: (bookingId) => request(`/bookings/${bookingId}/cancel`, { method: 'PATCH' }),
   getMyBookings: () => request('/users/me/bookings'),
   getRecommendations: () => request('/recommendations/me'),
+  getAdminStats: () => request('/admin/stats'),
 };
 
 export const SOCKET_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api').replace('/api', '');
